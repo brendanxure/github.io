@@ -5,7 +5,7 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Contact</title>
+    <title>Edit Contact</title>
 
     <!-- CSS Section -->
     <link rel="stylesheet" href="./node_modules/bootstrap/dist/css/bootstrap.min.css">
@@ -17,7 +17,7 @@
 
 </header>
 <main class="container">
-    <h1>Contact Us</h1>
+    <h1>Edit Contact</h1>
 
     <form class="col-lg-6 col-md-10 col-sm-12 mb-4">
 
@@ -39,27 +39,11 @@
                    aria-describedby="Email Address" aria-label="Email Address" required>
         </div>
 
-        <div class="input-group mb-3">
-            <span class="input-group-text">Message</span>
-            <textarea id="message" name="message"  type="tel" class="form-control"
-                   aria-describedby="Message Area" aria-label="Message Area"></textarea>
-        </div>
-<!--        <div class="mb-3">-->
-<!--            <label for="exampleInputPassword1" class="form-label">Password</label>-->
-<!--            <input type="password" class="form-control" id="exampleInputPassword1">-->
-<!--        </div>-->
-
-        <div class="mb-3 form-check">
-            <input id="subscribeCheckbox" type="checkbox" class="form-check-input">
-            <label class="form-check-label" for="subscribeCheckbox">Subscribe to our Contact List</label>
-        </div>
-        <button id="sendButton" name="sendButton" type="submit" class="btn btn-primary"><i class="fa-solid fa-envelope"></i> Submit</button>
+        <button id="editButton" name="editButton" type="submit" class="btn btn-primary"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
         <button id="cancelButton" name="cancelButton" type="reset" class="btn btn-warning"><i class="fa-solid fa-rotate-left"></i> Cancel</button>
     </form>
 
-    <div class="col-lg-6 col-md-4">
-        <a href="contact-list.html" class="btn btn-outline-primary mt-4"><i class="fa-solid fa-user"></i> Show Contact List</a>
-    </div>
+
 </main>
 
 
