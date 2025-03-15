@@ -1,10 +1,10 @@
 "use strict";
 
 
-import {LoadHeader} from "./header.js";
-import {Router} from "./router.js";
-import {LoadFooter} from "./footer.js";
-import {AuthGuard} from "./authguard.js";
+import { LoadHeader } from "./header.js";
+import { Router } from "./router.js";
+import { LoadFooter } from "./footer.js";
+import { AuthGuard } from "./authguard.js";
 
 const routes = {
     "/": "views/pages/home.html",
@@ -579,15 +579,14 @@ const router = new Router(routes);
         let subscribeCheckbox = document.getElementById("subscribeCheckbox");
 
         sendButton.addEventListener("click", function (event) {
-
+            event.preventDefault();
             if (subscribeCheckbox.checked) {
-                let contact = new core.Contact(fullName.value, contactNumber.value, emailAddress.value);
-                if (contact.serialize()) {
-                    let key = `contact_${Date.now()}`
-                    localStorage.setItem(key, contact.serialize());
-                }
+                AddContact(
+                    document.getElementById("fullName").value,
+                    document.getElementById("contactNumber").value,
+                    document.getElementById("emailAddress").value,
+                );
                 alert("Form submitted successfully");
-                router.navigate("/contact-list");
             }
         })
 
