@@ -1,66 +1,51 @@
 "use strict";
 
 
+import {LoadHeader} from "./header.js";
+import {Router} from "./router.js";
+import {LoadFooter} from "./footer.js";
+import {AuthGuard} from "./authguard.js";
+
+const routes = {
+    "/": "views/pages/home.html",
+    "/about": "views/pages/about.html",
+    "/products": "views/pages/products.html",
+    "/services": "views/pages/services.html",
+    "/contact": "views/pages/contact.html",
+    "/contact-list": "views/pages/contact-list.html",
+    "/edit": "views/pages/edit.html",
+    "/login": "views/pages/login.html",
+    "/register": "views/pages/register.html",
+    "/404": "views/pages/404.html"
+}
+
+const pageTitle = {
+    "/": "Home",
+    "/home": "Home",
+    "/about": "About Us",
+    "/products": "Products",
+    "/services": "Services",
+    "/contact": "Contact",
+    "/contact-list": "Contact List",
+    "/edit": "Edit Contact",
+    "/login": "Login",
+    "/register": "Register",
+    "/404": "Page Not Found",
+}
+const router = new Router(routes);
 (function () {
 
-    function CheckLogin(){
-        console.log("[INFO] Checking user login status");
-
-        const loginNav = document.getElementById("login");
-
-        if(!loginNav){
-            console.warn("[WARNING] loginNav element not found. skipping CheckLogin().")
-            return;
-        }
-
-        const  userSession = sessionStorage.getItem("user");
-
-        if(userSession){
-
-            loginNav.innerHTML = `<i class="fas fa-sign-out-alt">Logout</i>`;
-            loginNav.href = "#";
-            loginNav.addEventListener("click", (event)=> {
-                event.preventDefault();
-                sessionStorage.removeItem("user");
-                location.href = "login.html";
-            })
-        }
-    }
-    function updateActiveNavLink(){
-        console.log("[INFO] updateActiveNavLink called.....");
-
-        const currentPage = document.title.trim();
-        const navLinks = document.querySelectorAll("nav a");
-
-        navLinks.forEach(link => {
-
-            if(link.textContent.trim() === currentPage){
-                link.classList.add("active");
-            }else {
-                link.classList.remove("active");
-            }
-        })
-    }
 
     /**
-     * Loads the navbar into the current page
-     * @returns {Promise<void>}
+     * Loads the login page
      */
-    async function LoadHeader(){
-        console.log("[INFO]  LoadHeader called...");
-
-        return fetch("header.html")
-            .then(response => response.text())
-            .then(data => {
-                document.querySelector("header").innerHTML = data;
-                updateActiveNavLink();
-            })
-            .catch(error => console.log("[ERROR] unable to load header"));
-
-    }
-
-    function DisplayLoginPage(){
+    function DisplayLoginPage() {
         console.log("[INFO] DisplayLoginPage called....");
+
+        if (sessionStorage.getItem("user")) {
+            router.navigate("/contact-list");
+            return;
+        }
 
         const messageArea = document.getElementById("messageArea");
         const loginButton = document.getElementById("submitButton");
@@ -69,21 +54,21 @@
         // Hide message area initially
         messageArea.style.display = "none";
 
-        if(!loginButton){
+        if (!loginButton) {
             console.error("[ERROR] loginButton not found in the DOM");
             return;
         }
 
-        loginButton.addEventListener("click", async (event)=>{
+        loginButton.addEventListener("click", async (event) => {
             event.preventDefault();
 
             const username = document.getElementById("username").value.trim();
             const password = document.getElementById("password").value.trim();
 
-            try{
+            try {
 
                 const response = await fetch("data/users.json");
-                if(!response.ok){
+                if (!response.ok) {
                     throw new Error(`[ERROR] HTTP error!. Status: ${response.status}`);
                 }
 
@@ -91,32 +76,35 @@
                 //console.log("[DEBUG] JSON data", jsonData)
 
                 const users = jsonData.users;
-                if(!Array.isArray(users)){
+                if (!Array.isArray(users)) {
                     throw new Error("[ERROR] JSON data does not contain valid array")
                 }
 
                 let success = false;
                 let authenticatedUser = null;
 
-                for(const user of users){
-                    if(user.Username === username && user.Password === password){
+                for (const user of users) {
+                    if (user.Username === username && user.Password === password) {
                         success = true;
                         authenticatedUser = user;
                         break;
                     }
                 }
 
-                if(success){
+                if (success) {
 
                     sessionStorage.setItem("user", JSON.stringify({
-                        DisplayName: authenticatedUser.DisplayName,
-                        EmailAddress: authenticatedUser.EmailAddress,
-                        Username: authenticatedUser.Username
+                        DisplayName: authenticatedUser?.DisplayName,
+                        EmailAddress: authenticatedUser?.EmailAddress,
+                        Username: authenticatedUser?.Username
                     }));
 
                     messageArea.style.display = "none";
                     messageArea.classList.remove("alert-danger");
-                    location.href = "contact-list.html";
+
+                    LoadHeader().then(() => {
+                        router.navigate("/contact-list");
+                    })
                 } else {
                     messageArea.style.display = "block";
                     messageArea.classList.add("aller", "alert-danger");
@@ -126,15 +114,15 @@
                     document.getElementById("username").select();
 
                 }
-            }catch(error){
+            } catch (error) {
                 console.error("[ERROR] Login failed", error);
             }
         });
 
-        cancelButton.addEventListener("click", (event)=>{
+        cancelButton.addEventListener("click", (event) => {
 
             document.getElementById("loginForm").reset();
-            location.href = "index.html";
+            router.navigate("/");
         })
 
     }
@@ -143,8 +131,141 @@
      * Loads the register page
      *
      */
-    function DisplayRegisterPage(){
+    function DisplayRegisterPage() {
         console.log("[INFO] DisplayRegisterPage called....");
+    }
+
+
+    /**
+     * Redirect the user back to contact-list.html
+     */
+    function handleCancelClick() {
+        router.navigate("/contact-list");
+    }
+
+    /**
+     * Handle the process of editing an existing contact
+     * @param event
+     * @param contact
+     * @param page
+     */
+    function handleEditClick(event, contact, page) {
+        // prevent default form submission
+        event.preventDefault();
+        console.log("[INFO] Edit button clicked");
+
+        if (!validateForm()) {
+            alert("Invalid data! Please check your inputs");
+            return;
+        }
+        console.log("[INFO] Form validation passed");
+
+        // Retrieve update values from the form fields
+        const fullName = document.getElementById("fullName").value;
+        const contactNumber = document.getElementById("contactNumber").value;
+        const emailAddress = document.getElementById("emailAddress").value;
+
+        // Update the contact information
+        contact.fullName = fullName;
+        contact.contactNumber = contactNumber;
+        contact.emailAddress = emailAddress;
+
+        // Save the update contact back to local storage (csv format)
+        localStorage.setItem(page, contact.serialize());
+
+        // alert("Contact updated successfully!");
+        // Redirect to contact list
+        router.navigate("/contact-list");
+    }
+
+    /**
+     * Handles the process of adding a new contact
+     * @param event - the event object to prevent default form submission
+     */
+    function handleAddClick(event) {
+        event.preventDefault();
+
+        if (!validateForm()) {
+            alert("Form contains errors. Please correct them before submitting");
+            return;
+        }
+
+        const fullName = document.getElementById("fullName").value;
+        const contactNumber = document.getElementById("contactNumber").value;
+        const emailAddress = document.getElementById("emailAddress").value;
+
+        // Create and save new contact
+        AddContact(fullName, contactNumber, emailAddress);
+
+        // Redirect to contact list
+        router.navigate("/contact-list");
+    }
+
+    /**
+     * Validate the entire form by checking the validity of each input field
+     * @return {boolean} - return true if all fields pass validation, false otherwise
+     */
+    function validateForm() {
+        return (
+            validateInput("fullName") &&
+            validateInput("contactNumber") &&
+            validateInput("emailAddress")
+        );
+    }
+
+
+    /**
+     * Validates an input based on predefined validation rule
+     * @param fieldId
+     * @returns {boolean} -  returns true of valid, false otherwise
+     */
+    function validateInput(fieldId) {
+        const field = document.getElementById(fieldId);
+        const errorElement = document.getElementById(`${fieldId}-error`);
+        console.log(errorElement);
+        const rule = VALIDATION_RULES[fieldId];
+
+        if (!field || !errorElement || !rule) {
+            console.warn(`[WARN] Validation rules not found for : ${fieldId}`);
+            return false;
+        }
+
+        // Check if the input is empty
+        if (field.value.trim() === "") {
+            errorElement.textContent = "This field is required";
+            errorElement.style.display = "block";
+            return false;
+        }
+
+        // check field against regular expression
+        if (!rule.regex.test(field.value)) {
+            errorElement.textContent = rule.errorMessage;
+            errorElement.style.display = "block";
+            return false;
+        }
+
+        errorElement.textContent = "";
+        errorElement.style.display = "none";
+        return true;
+    }
+
+    /**
+     * centralized validation rules for input fields
+     * @type {{fullName: {regex: RegExp, errorMessage: string}, contactNumber: {regex: RegExp, errorMessage: string}, emailAddress: {regex: RegExp}, catch(*): void}}
+     */
+    const VALIDATION_RULES = {
+        fullName: {
+            regex: /^[A-Za-z\s]+$/, // Allows for only letters amd spaces
+            errorMessage: "Full Name must contain only letter and spaces"
+        },
+        contactNumber: {
+            regex: /^\d{3}-\d{3}-\d{4}$/,
+            errorMessage: "Contact Number must be in format ###-###-####"
+        },
+        emailAddress: {
+            regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            errorMessage: "Contact Number must be in format ###-###-####"
+        }
     }
 
 
@@ -156,69 +277,64 @@
      *
      */
     function AddContact(fullName, contactNumber, emailAddress) {
-        let contact = new core.Contact(fullName, contactNumber, emailAddress);
-        if(contact.serialize()){
-            let key = `contact_${Date.now()}`
-            localStorage.setItem(key, contact.serialize());
+        console.log("[DEBUG] AddContact() triggered...")
+
+        if (!validateForm()) {
+            alert("Form contains errors. Please correct them before submitting");
+            return;
         }
+
+        let contact = new core.Contact(fullName, contactNumber, emailAddress);
+        if (contact.serialize()) {
+            // The primary key for a contact --> contact_ + date & time
+            let key = `contact_${Date.now()}`;
+            localStorage.setItem(key, contact.serialize());
+        } else {
+            console.error("[ERROR] Contact serialization failed");
+        }
+
+        router.navigate("/contact-list");
     }
+
 
     /**
      * loads the edit page and updates the list when the values on the input are updated
      *
      */
-    function DisplayEditPage(){
+    function DisplayEditPage() {
         console.log("Called DisplayEditPage() .....");
 
-        const page = location.hash.substring(1);
+        const page = location.hash.split("#")[2];
 
-        switch(page){
-            case "add":
-            {
+        switch (page) {
+            case "add": {
                 // Add a new contact
                 const heading = document.querySelector("main>h1");
-                const  editButton = document.getElementById("editButton");
+                const editButton = document.getElementById("editButton");
                 const cancelButton = document.getElementById("cancelButton");
 
                 // Update Styling
                 document.title = "Add Contact";
 
-                if(heading){
+                if (heading) {
                     heading.textContent = "Add Contact";
                 }
 
-                if(editButton){
+                if (editButton) {
                     editButton.innerHTML = `<i class="fa-solid fa-user-plus"></i> Add Contact`;
-
-                    editButton.addEventListener("click", (event)=> {
-
-                        // Prevent form Submission
-                        event.preventDefault();
-
-                        AddContact(
-                            document.getElementById("fullName").value,
-                            document.getElementById("contactNumber").value,
-                            document.getElementById("emailAddress").value
-                        );
-                        location.href="contact-list.html";
-
-                    });
+                    editButton.classList.remove("btn-primary");
+                    editButton.classList.add("btn-primary");
                 }
-                if(cancelButton){
-                    cancelButton.addEventListener("click", (event)=> {
-
-                        location.href="contact-list.html";
-                    })
-                }
+                addEventListenerOnce("editButton", "click", handleAddClick);
+                addEventListenerOnce("cancelButton", "click", handleCancelClick);
                 break;
             }
-            default:
-            {
+            default: {
                 // Edit an existing contact
                 const contact = new core.Contact();
                 const contactData = localStorage.getItem(page);
 
-                if(contactData){
+                if (contactData) {
                     contact.deserialize(contactData);
                 }
 
@@ -227,31 +343,17 @@
                 document.getElementById("contactNumber").value = contact.contactNumber;
                 document.getElementById("emailAddress").value = contact.emailAddress;
 
-                const  editButton = document.getElementById("editButton");
+                const editButton = document.getElementById("editButton");
                 const cancelButton = document.getElementById("cancelButton");
 
-                if(editButton){
-                    editButton.addEventListener("click", (event)=> {
-                        //Prevent default form submission
-                        event.preventDefault();
-
-                        contact.fullName = document.getElementById("fullName").value;
-                        contact.emailAddress = document.getElementById("emailAddress").value;
-                        contact.contactNumber = document.getElementById("contactNumber").value;
-
-                        //update -overwrite contact
-                        localStorage.setItem(page, contact.serialize());
-
-                        location.href="contact-list.html";
-
-                    })
+                if (editButton) {
+                    editButton.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Edit`;
+                    editButton.classList.remove("btn-primary");
+                    editButton.classList.add("btn-primary");
                 }
-                if(cancelButton){
-                    cancelButton.addEventListener("click", (event)=> {
-
-                        location.href="contact-list.html";
-                    })
-                }
+                addEventListenerOnce("editButton", "click",
+                    (event) => handleEditClick(event, contact, page));
+                addEventListenerOnce("cancelButton", "click", handleCancelClick);
                 break;
             }
         }
@@ -259,13 +361,51 @@
 
     }
 
-    async function DisplayWeather(){
+    /**
+     * Attaches validation event listeners to form input fields dynamically
+     * @param elementId
+     * @param event
+     * @param handler
+     */
+    function addEventListenerOnce(elementId, event, handler) {
+
+        // retrieve the element from the DOM
+        const element = document.getElementById(elementId);
+
+        if (element) {
+            element.removeEventListener(event, handler);
+            element.addEventListener(event, handler);
+        } else {
+            console.warn(`[WARN] Element with ID '${elementId}' not found`);
+        }
+    }
+
+    function attachValidationListeners() {
+        console.log("[INFO] Attaching validation listeners.......");
+
+        Object.keys(VALIDATION_RULES).forEach((fieldId) => {
+            const field = document.getElementById(fieldId);
+
+            if (!field) {
+                console.warn(`[WARN] field ${fieldId} not found. Skipping listener`);
+                return;
+            }
+
+            //Attach event listener using the centralized validation method
+            addEventListenerOnce(fieldId, "input", () => validateInput(fieldId));
+        })
+    }
+
+    /**
+     * Calls api that displays the current weather of the day
+     */
+    async function DisplayWeather() {
 
         const apiKey = "aed8a2ea573812f57f424e31770b7114";
         const city = "Oshawa";
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
 
-        try{
+        try {
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error("Failed to fetch weather data");
@@ -279,13 +419,16 @@
                                              <strong>Weather:</strong> ${data.weather[0].description}`;
 
 
-        }catch(error){
+        } catch (error) {
             console.error(`Error calling openweathermap for weather`);
             document.getElementById("weather-data").textContent = "Unable to fetch weather data at this time";
         }
     }
 
 
+    /**
+     * Loads the contact list page to edit or add or display contacts stored
+     */
     function DisplayContactListPage() {
         console.log("DisplayContactListPage");
 
@@ -339,120 +482,199 @@
 
         const addButton = document.getElementById("addButton");
         addButton.addEventListener("click", () => {
-            location.href = "edit.html#add";
+            router.navigate("/edit#add")
         });
 
 
         const deleteButton = document.querySelectorAll("button.delete");
         deleteButton.forEach((button) => {
 
-            button.addEventListener("click", function() {
+            button.addEventListener("click", function () {
+
+                const contactKey = this.value;
+                console.log(`[DEBUG] Deleting contact with contact ID: ${contactKey}`);
+                if (!contactKey.startsWith("contact_")) {
+                    console.error(`[ERROR] Invalid contact key format: ${contactKey}`);
+                    return;
+                }
 
                 if (confirm("Delete contact, please confirm")) {
                     localStorage.removeItem(this.value)
-                    location.href = "contact-list.html";
+                    DisplayContactListPage();
+                    router.navigate("/contact-list");
+                    // location.href = "contact-list.html";
                 }
             });
         });
         const editButton = document.querySelectorAll("button.edit");
         editButton.forEach((button) => {
 
-            button.addEventListener("click", function() {
-                location.href = "edit.html#" + this.value;
+            button.addEventListener("click", function () {
+                router.navigate(`/edit#${this.value}`)
+                // location.href = "edit.html#" + this.value;
             });
         });
     }
 
+    /**
+     * Loads the home page
+     */
     function DisplayHomePage() {
         console.log("Calling DisplayHomePage...");
 
-        let aboutUsButton = document.getElementById("AboutusBtn");
-        aboutUsButton.addEventListener("click",  (event)=> {
-            location.href = "about.html";
+        const main = document.querySelector("main");
+        main.innerHTML = "";
+
+        main.insertAdjacentHTML(
+            "beforeend",
+            `<button id="AboutUsBtn" class="btn btn-primary">About Us</button>
+
+                <div id="weather" class="mt-5">
+                    <h3>Weather Information</h3>
+                    <p id="weather-data">Fetching weather data...</p>
+                </div>
+                
+                <p id="MainParagraph" class="mt-5"> This is my main paragraph</p>
+                <article class="container">
+                    <p id="ArticleParagraph" class="mt-3">This is my article paragraph</p>
+                </article>`
+        )
+
+        let aboutUsButton = document.getElementById("AboutUsBtn");
+        aboutUsButton.addEventListener("click", (event) => {
+            router.navigate("/about");
         });
 
         DisplayWeather();
-
-        document.querySelector("main").insertAdjacentHTML(
-            'beforeend',
-            `<p id="MainParagraph" class="mt-3">This is my first main paragraph</p>`
-        )
-
-        document.body.insertAdjacentHTML(
-            'beforeend',
-            `<article class="container">
-                    <p id="ArticleParagraph" class="mt-3">This is my first article paragraph</p>
-                  </article>`
-        )
     }
 
+    /**
+     * Loads the products page
+     */
     function DisplayProductsPage() {
         console.log("Calling DisplayProductsPage...");
     }
+
+    /**
+     * Loads the service page
+     */
     function DisplaySerivcesPage() {
         console.log("Calling DisplaySerivcesPage...");
     }
+
+    /**
+     * Loads the About page
+     */
     function DisplayAboutPage() {
         console.log("Calling DisplayAboutPage...");
     }
+
+    /**
+     * Loads the contact page to create new contact
+     */
     function DisplayContactPage() {
         console.log("Calling DisplayContactPage...");
 
         let sendButton = document.getElementById("sendButton");
         let subscribeCheckbox = document.getElementById("subscribeCheckbox");
 
-        sendButton.addEventListener("click", function () {
-            if(subscribeCheckbox.checked) {
+        sendButton.addEventListener("click", function (event) {
+
+            if (subscribeCheckbox.checked) {
                 let contact = new core.Contact(fullName.value, contactNumber.value, emailAddress.value);
-                if(contact.serialize()){
+                if (contact.serialize()) {
                     let key = `contact_${Date.now()}`
                     localStorage.setItem(key, contact.serialize());
                 }
+                alert("Form submitted successfully");
+                router.navigate("/contact-list");
             }
         })
+
+        const contactListButton = document.getElementById("showContactList");
+        contactListButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            router.navigate("/contact-list");
+        });
     }
 
-    function Start() {
-        console.log("Starting App...");
-        console.log(`Current document title: ${document.title}`);
+    /**
+     * Listen for changes and update the navigation links
+     */
+    document.addEventListener("routeLoaded", (event) => {
+        const newPath = event.detail; //extract the route from the event passed
+        console.log(`[INFO] Route Loaded: ${newPath}`);
 
-        // Load header first then run CheckLogin
-        LoadHeader().then(()=> {
-            CheckLogin();
-        });
-        switch (document.title){
-            case "Home":
+        LoadHeader().then(() => {
+            handlePageLogic(newPath);
+        })
+    })
+
+    window.addEventListener("sessionExpired", () => {
+        console.warn("[SESSION] Redirecting the user due to inactivity.");
+        router.navigate("/login");
+    });
+
+    function handlePageLogic(path) {
+
+        document.title = pageTitle[path] || "Untitled Page";
+
+        const protectedRoutes = ["/contact-list", "/edit"];
+        if (protectedRoutes.includes(path)) {
+            AuthGuard(); //redirected to /login if not authenticated
+        }
+
+        switch (path) {
+            case "/":
                 DisplayHomePage();
                 break;
-            case "Products":
-                DisplayProductsPage();
-                break;
-            case "Services":
-                DisplaySerivcesPage();
-                break;
-            case "About":
+            case "/about":
                 DisplayAboutPage();
                 break;
-            case "Contact":
-                DisplayContactPage();
+            case "/products":
+                DisplayProductsPage();
                 break;
-            case "Contact List":
+            case "/services":
+                DisplaySerivcesPage();
+                break;
+            case "/contact":
+                DisplayContactPage();
+                attachValidationListeners();
+                break;
+            case "/contact-list":
                 DisplayContactListPage();
                 break;
-            case "Edit Contact":
+            case "/edit":
                 DisplayEditPage();
+                attachValidationListeners();
                 break;
-            case "Login":
+            case "/login":
                 DisplayLoginPage();
                 break;
-            case "Register":
+            case "/register":
                 DisplayRegisterPage();
                 break;
             default:
-                console.error("No matching case for page title");
+                console.warn(`[WARNING] No display logic found for: ${path}`);
+
         }
     }
-    window.addEventListener("DOMContentLoaded", ()=>{
+
+    async function Start() {
+        console.log("Starting App...");
+
+        // Load header first then run CheckLogin
+        await LoadHeader();
+        await LoadFooter();
+        AuthGuard();
+
+        const currentPath = location.hash.slice(1) || "/";
+        router.loadRoute(currentPath);
+
+        handlePageLogic(currentPath);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
         console.log("DOM fully loaded and parsed");
         Start();
     });

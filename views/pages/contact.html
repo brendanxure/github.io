@@ -1,0 +1,50 @@
+<h1>Contact Us</h1>
+
+<form class="col-lg-6 col-md-10 col-sm-12 mb-4">
+
+    <div class="input-group mb-3">
+        <span class="input-group-text">Full Name</span>
+        <input id="fullName" name="fullName" type="text" class="form-control"
+               aria-describedby="Full Name" aria-label="Full Name" required>
+        <span class="" id="fullName-error"></span>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text">Contact Number</span>
+        <input id="contactNumber" name="contactNumber" type="tel" class="form-control"
+               aria-describedby="Contact Number" aria-label="Contact Number" required>
+        <span class="" id="contactNumber-error"></span>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text">Email Address</span>
+        <input id="emailAddress" name="emailAddress" type="email" class="form-control"
+               aria-describedby="Email Address" aria-label="Email Address" required>
+        <span class="" id="emailAddress-error"></span>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text">Message</span>
+        <textarea id="message" name="message" type="tel" class="form-control"
+                  aria-describedby="Message Area" aria-label="Message Area"></textarea>
+    </div>
+    <!--        <div class="mb-3">-->
+    <!--            <label for="exampleInputPassword1" class="form-label">Password</label>-->
+    <!--            <input type="password" class="form-control" id="exampleInputPassword1">-->
+    <!--        </div>-->
+
+    <div class="mb-3 form-check">
+        <input id="subscribeCheckbox" type="checkbox" class="form-check-input">
+        <label class="form-check-label" for="subscribeCheckbox">Subscribe to our Contact List</label>
+    </div>
+    <button id="sendButton" name="sendButton" type="submit" class="btn btn-primary"><i class="fa-solid fa-envelope"></i>
+        Submit
+    </button>
+    <button id="cancelButton" name="cancelButton" type="reset" class="btn btn-warning"><i
+            class="fa-solid fa-rotate-left"></i> Cancel
+    </button>
+</form>
+
+<div class="col-lg-6 col-md-4">
+    <a href="#/contact-list" class="btn btn-outline-primary mt-4"><i class="fa-solid fa-user"></i> Show Contact List</a>
+</div>
