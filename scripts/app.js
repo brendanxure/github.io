@@ -586,7 +586,6 @@ const router = new Router(routes);
                     document.getElementById("contactNumber").value,
                     document.getElementById("emailAddress").value,
                 );
-                alert("Form submitted successfully");
             }
         })
 
