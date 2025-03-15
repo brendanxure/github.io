@@ -586,6 +586,8 @@ const router = new Router(routes);
                     document.getElementById("contactNumber").value,
                     document.getElementById("emailAddress").value,
                 );
+            }else {
+                alert("Please click the check box")
             }
         })
 
