@@ -264,7 +264,7 @@ const router = new Router(routes);
         },
         emailAddress: {
             regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            errorMessage: "Contact Number must be in format ###-###-####"
+            errorMessage: "Invalid email address: must be a valid email address format."
         }
     }
 
